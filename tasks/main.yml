@@ -12,7 +12,7 @@
       user: name=auto uid=2000 append=yes groups=sudo password="!" shell="/bin/bash"
     
     - name: make sure the auto user has the ssh key it needs
-      authorized_key: user=auto key="{{ lookup('file', 'files/auto.pub') }}" manage_dir=yes state=present 
+      authorized_key: user=auto key="{{ lookup('file', 'auto.pub') }}" manage_dir=yes state=present 
     
     - name: Disallow password authentication
       lineinfile: dest=/etc/ssh/sshd_config regexp="^PasswordAuthentication" line="PasswordAuthentication no" state=present
