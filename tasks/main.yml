@@ -1,14 +1,5 @@
-# bootstrap.yml
-# use this playbook to boostrap new servers:
-# echo "<IP>" > hosts
-# ansible-playbook -i hosts playbooks/bootstrap.yml --user root
+# akoeb.common/tasks/main.yml
 ---
-# accelerate: true
-- hosts: server
-
-
-  # TASKS
-  tasks:
     # initial dist upgrade, fail2ban
     - name: Run apt dist upgrade
       apt: upgrade=dist update_cache=yes 
@@ -138,17 +129,4 @@
     # TODO: install ossec
 
      
-  # HANDLERS
-  handlers:
-    - name: Restart sshd
-      service: name=ssh state=restarted
 
-
-    - name: Restart nullmailer
-      service: name=nullmailer state=restarted
-
-    - name: Restart collectd
-      service: name=collectd state=restarted
-
-    - name: Restart unattended-upgrades
-      service: name=unattended-upgrades state=restarted

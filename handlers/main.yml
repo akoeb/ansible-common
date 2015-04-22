@@ -1,0 +1,14 @@
+# akoeb.common/handlers/main.yml
+---
+    - name: Restart sshd
+      service: name=ssh state=restarted
+
+
+    - name: Restart nullmailer
+      service: name=nullmailer state=restarted
+
+    - name: Restart collectd
+      service: name=collectd state=restarted
+
+    - name: Restart unattended-upgrades
+      service: name=unattended-upgrades state=restarted
