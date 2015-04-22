@@ -1,0 +1,154 @@
+# bootstrap.yml
+# use this playbook to boostrap new servers:
+# echo "<IP>" > hosts
+# ansible-playbook -i hosts playbooks/bootstrap.yml --user root
+---
+# accelerate: true
+- hosts: server
+
+
+  # TASKS
+  tasks:
+    # initial dist upgrade, fail2ban
+    - name: Run apt dist upgrade
+      apt: upgrade=dist update_cache=yes 
+
+    - name: Install fail2ban
+      apt: pkg=fail2ban state=installed
+    
+    # user access
+    - name: Make sure the auto user is installed, but cannot login (login only with key)
+      user: name=auto uid=2000 append=yes groups=sudo password="!" shell="/bin/bash"
+    
+    - name: make sure the auto user has the ssh key it needs
+      authorized_key: user=auto key="{{ lookup('file', 'files/auto.pub') }}" manage_dir=yes state=present 
+    
+    - name: Disallow password authentication
+      lineinfile: dest=/etc/ssh/sshd_config regexp="^PasswordAuthentication" line="PasswordAuthentication no" state=present
+      notify: Restart sshd
+    
+    - name: Allow ssh access only to auto user
+      lineinfile: dest=/etc/ssh/sshd_config regexp="AllowUsers" line="AllowUsers auto" state=present
+    
+    - name: Disallow root SSH access
+      lineinfile: dest=/etc/ssh/sshd_config regexp="^PermitRootLogin" line="PermitRootLogin no" state=present
+      notify: Restart sshd
+    
+    - name: Remove sudo group rights
+      lineinfile: dest=/etc/sudoers regexp='^%sudo' state=absent
+
+    - name: make sure the sudoers file allows the group sudo without password prompt
+      lineinfile: dest='/etc/sudoers' regexp='^auto' line='auto ALL=(ALL) NOPASSWD:ALL' state='present'
+
+    - name: deactivate root password
+      user: name=root password="!"
+    
+    
+    # unattended upgrades
+    - name: Install unattended-upgrades
+      apt: pkg=unattended-upgrades state=present
+      notify: Restart unattended-upgrades
+          
+    - name: Adjust APT update intervals
+      copy: src=files/apt_periodic dest=/etc/apt/apt.conf.d/10periodic
+    
+    - name: setup unattended-upgrades with fixed debian release wheezy
+      copy: src=files/50unattended-upgrades dest=/etc/apt/apt.conf.d/50unattended-upgrades
+    
+    
+    # logwatch
+    - name: Install logwatch
+      apt: pkg=logwatch state=installed
+    
+    - name: Make logwatch mail to admin_email daily
+      lineinfile: dest=/etc/cron.daily/00logwatch regexp="^/usr/sbin/logwatch" line="/usr/sbin/logwatch --output mail --mailto {{admin_email}} --detail high" state=present create=yes
+    
+    
+    # firewall:
+    - name: Install ufw Firewall
+      apt: pkg=ufw state=installed
+    
+    - name: default outgoing firewall policy (drop)
+      lineinfile: dest=/etc/default/ufw regexp="^DEFAULT_OUTPUT_POLICY=" line="DEFAULT_OUTPUT_POLICY=DROP" state=present
+    
+    - name: configure firewall to allow ssh incoming from /etc/ufw/applications.d/openssh-server
+      ufw: rule=allow name=OpenSSH state=enabled 
+    
+    - name: allow DNS lookups
+      ufw: rule="allow" name="DNS" direction=out state=enabled
+    
+    - name: allow outgoing http traffic for getting system updates
+      ufw: rule=allow name="WWW Full" to_ip={{ item }} direction=out  state=enabled
+      with_items:
+        - 141.76.2.4/32
+        - 195.20.242.89/32
+        - 212.211.132.32/32
+        - 212.211.132.250/32
+        - 2a01:4f8:0:a101::1:1
+        - 2001:a78:5:1:216:35ff:fe7f:6ceb
+        - 2001:a78:5:0:216:35ff:fe7f:be4f
+
+    - name: allow outgoing dhcp requests
+      ufw: rule=allow proto=udp to_ip=109.239.48.251 to_port=67 direction=out state=enabled
+     
+    - name: Install nullmailer
+      apt: pkg=nullmailer state=installed
+   
+    - name: configure nullmailer adminaddress
+      copy: content="{{admin_email}}\n" dest=/etc/nullmailer/adminaddr
+      notify: Restart nullmailer
+
+    - name: configure nullmailer mailname
+      copy: content="{{mailname}}\n" dest=/etc/mailname
+      notify: Restart nullmailer
+
+    - name: configure nullmailer defauldomain
+      copy: content="{{defaultdomain}}\n" dest=/etc/nullmailer/defaultdomain
+      notify: Restart nullmailer
+
+    - name: configure nullmailer relayhost
+      copy: dest=/etc/nullmailer/remotes content="{{relay_host}} smtp --port=587 --user={{relay_user}} --pass={{relay_passwd}} --starttls --insecure\n"
+      notify: Restart nullmailer
+
+    - name: allow mail submission to mail relay server
+      ufw: rule=allow to_ip={{relay_host_ip}} name="Mail submission" direction=out state=enabled
+
+    - name: allow ntp traffic outbound
+      ufw: rule=allow port=123 proto=udp direction=out state=enabled
+
+    - name: Install ntp server
+      apt: pkg=ntp state=installed
+
+      # Install and configure collectd
+    - name: Install collectd
+      apt: pkg=collectd state=installed
+
+    - name: Install collectd-utils
+      apt: pkg=collectd-utils state=installed
+
+    - name: upload collectd config
+      copy: src=files/collectd.conf dest=/etc/collectd/collectd.conf owner=root group=root mode=0644 backup=yes
+      notify: Restart collectd
+     
+    - name: create directory for other collectd configs which can be put there later
+      file: path=/etc/collectd/others state=directory owner=root group=root mode=0750 
+      notify: Restart collectd
+      
+
+    # TODO: install ossec
+
+     
+  # HANDLERS
+  handlers:
+    - name: Restart sshd
+      service: name=ssh state=restarted
+
+
+    - name: Restart nullmailer
+      service: name=nullmailer state=restarted
+
+    - name: Restart collectd
+      service: name=collectd state=restarted
+
+    - name: Restart unattended-upgrades
+      service: name=unattended-upgrades state=restarted
