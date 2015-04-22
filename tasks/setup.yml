@@ -18,8 +18,8 @@
       lineinfile: dest=/etc/ssh/sshd_config regexp="^PasswordAuthentication" line="PasswordAuthentication no" state=present
       notify: Restart sshd
     
-    - name: Allow ssh access only to auto user
-      lineinfile: dest=/etc/ssh/sshd_config regexp="AllowUsers" line="AllowUsers auto" state=present
+    - name: Allow ssh access only to auto and vagrant user
+      lineinfile: dest=/etc/ssh/sshd_config regexp="AllowUsers" line="AllowUsers auto vagrant" state=present
     
     - name: Disallow root SSH access
       lineinfile: dest=/etc/ssh/sshd_config regexp="^PermitRootLogin" line="PermitRootLogin no" state=present
