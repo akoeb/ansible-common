@@ -3,152 +3,119 @@
     # initial dist upgrade, fail2ban
     - name: Run apt dist upgrade
       apt: upgrade=dist update_cache=yes 
-      when: needs_setup is defined and needs_setup
 
     - name: Install fail2ban
       apt: pkg=fail2ban state=installed
-      when: needs_setup is defined and needs_setup
     
     # user access
     - name: Make sure the auto user is installed, but cannot login (login only with key)
       user: name=auto uid=2000 append=yes groups=sudo password="!" shell="/bin/bash"
-      when: needs_setup is defined and needs_setup
     
     - name: make sure the auto user has the ssh key it needs
       authorized_key: user=auto key="{{ lookup('file', 'auto.pub') }}" manage_dir=yes state=present 
-      when: needs_setup is defined and needs_setup
     
     - name: Disallow password authentication
       lineinfile: dest=/etc/ssh/sshd_config regexp="^PasswordAuthentication" line="PasswordAuthentication no" state=present
       notify: Restart sshd
-      when: needs_setup is defined and needs_setup
     
     - name: Allow ssh access only to auto user
       lineinfile: dest=/etc/ssh/sshd_config regexp="AllowUsers" line="AllowUsers auto" state=present
-      when: needs_setup is defined and needs_setup
     
     - name: Disallow root SSH access
       lineinfile: dest=/etc/ssh/sshd_config regexp="^PermitRootLogin" line="PermitRootLogin no" state=present
       notify: Restart sshd
-      when: needs_setup is defined and needs_setup
     
     - name: Remove sudo group rights
       lineinfile: dest=/etc/sudoers regexp='^%sudo' state=absent
-      when: needs_setup is defined and needs_setup
 
     - name: make sure the sudoers file allows the group sudo without password prompt
       lineinfile: dest='/etc/sudoers' regexp='^auto' line='auto ALL=(ALL) NOPASSWD:ALL' state='present'
-      when: needs_setup is defined and needs_setup
 
     - name: deactivate root password
       user: name=root password="!"
-      when: needs_setup is defined and needs_setup
     
     
     # unattended upgrades
     - name: Install unattended-upgrades
       apt: pkg=unattended-upgrades state=present
       notify: Restart unattended-upgrades
-      when: needs_setup is defined and needs_setup
           
     - name: Adjust APT update intervals
       copy: src=apt_periodic dest=/etc/apt/apt.conf.d/10periodic
-      when: needs_setup is defined and needs_setup
     
     - name: setup unattended-upgrades with fixed debian release wheezy
       copy: src=50unattended-upgrades dest=/etc/apt/apt.conf.d/50unattended-upgrades
-      when: needs_setup is defined and needs_setup
     
     
     # logwatch
     - name: Install logwatch
       apt: pkg=logwatch state=installed
-      when: needs_setup is defined and needs_setup
     
     - name: Make logwatch mail to admin_email daily
       lineinfile: dest=/etc/cron.daily/00logwatch regexp="^/usr/sbin/logwatch" line="/usr/sbin/logwatch --output mail --mailto {{admin_email}} --detail high" state=present create=yes
-      when: needs_setup is defined and needs_setup
     
     
     # firewall:
     - name: Install ufw Firewall
       apt: pkg=ufw state=installed
-      when: needs_setup is defined and needs_setup
     
     - name: configure firewall to allow ssh incoming from /etc/ufw/applications.d/openssh-server
       ufw: rule=allow name=OpenSSH state=enabled 
-      when: needs_setup is defined and needs_setup
     
     - name: default outgoing firewall policy (drop)
       lineinfile: dest=/etc/default/ufw regexp="^DEFAULT_OUTPUT_POLICY=" line="DEFAULT_OUTPUT_POLICY=DROP" state=present
-      when: needs_setup is defined and needs_setup
     
     - name: allow DNS lookups
       ufw: rule="allow" name="DNS" direction=out state=enabled
-      when: needs_setup is defined and needs_setup
     
     - name: allow outgoing http traffic for getting system updates
       ufw: rule=allow name="WWW Full" direction=out  state=enabled
-      when: needs_setup is defined and needs_setup
 
     - name: allow outgoing dhcp requests
       ufw: rule=allow proto=udp to_ip=109.239.48.251 to_port=67 direction=out state=enabled
-      when: needs_setup is defined and needs_setup
      
     - name: Install nullmailer
       apt: pkg=nullmailer state=installed
-      when: needs_setup is defined and needs_setup
    
     - name: configure nullmailer adminaddress
       copy: content="{{admin_email}}\n" dest=/etc/nullmailer/adminaddr
       notify: Restart nullmailer
-      when: needs_setup is defined and needs_setup
 
     - name: configure nullmailer mailname
       copy: content="{{mailname}}\n" dest=/etc/mailname
       notify: Restart nullmailer
-      when: needs_setup is defined and needs_setup
 
     - name: configure nullmailer defauldomain
       copy: content="{{defaultdomain}}\n" dest=/etc/nullmailer/defaultdomain
       notify: Restart nullmailer
-      when: needs_setup is defined and needs_setup
 
     - name: configure nullmailer relayhost
       copy: dest=/etc/nullmailer/remotes content="{{relay_host}} smtp --port=587 --user={{relay_user}} --pass={{relay_passwd}} --starttls --insecure\n"
       notify: Restart nullmailer
-      when: needs_setup is defined and needs_setup
 
     - name: allow mail submission to mail relay server
       ufw: rule=allow to_ip={{relay_host_ip}} name="Mail submission" direction=out state=enabled
-      when: needs_setup is defined and needs_setup
 
     - name: allow ntp traffic outbound
       ufw: rule=allow port=123 proto=udp direction=out state=enabled
-      when: needs_setup is defined and needs_setup
 
     - name: Install ntp server
       apt: pkg=ntp state=installed
-      when: needs_setup is defined and needs_setup
 
       # Install and configure collectd
     - name: Install collectd
       apt: pkg=collectd state=installed
-      when: needs_setup is defined and needs_setup
 
     - name: Install collectd-utils
       apt: pkg=collectd-utils state=installed
-      when: needs_setup is defined and needs_setup
 
     - name: upload collectd config
       copy: src=collectd.conf dest=/etc/collectd/collectd.conf owner=root group=root mode=0644 backup=yes
       notify: Restart collectd
-      when: needs_setup is defined and needs_setup
      
     - name: create directory for other collectd configs which can be put there later
       file: path=/etc/collectd/others state=directory owner=root group=root mode=0750 
       notify: Restart collectd
-      when: needs_setup is defined and needs_setup
       
 
     # TODO: install ossec
