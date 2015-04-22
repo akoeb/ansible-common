@@ -41,10 +41,10 @@
       notify: Restart unattended-upgrades
           
     - name: Adjust APT update intervals
-      copy: src=files/apt_periodic dest=/etc/apt/apt.conf.d/10periodic
+      copy: src={{ lookup('file', 'apt_periodic') }} dest=/etc/apt/apt.conf.d/10periodic
     
     - name: setup unattended-upgrades with fixed debian release wheezy
-      copy: src=files/50unattended-upgrades dest=/etc/apt/apt.conf.d/50unattended-upgrades
+      copy: src={{ lookup('file', '50unattended-upgrades') }} dest=/etc/apt/apt.conf.d/50unattended-upgrades
     
     
     # logwatch
@@ -118,7 +118,7 @@
       apt: pkg=collectd-utils state=installed
 
     - name: upload collectd config
-      copy: src=files/collectd.conf dest=/etc/collectd/collectd.conf owner=root group=root mode=0644 backup=yes
+      copy: src={{ lookup('file', 'collectd.conf') }} dest=/etc/collectd/collectd.conf owner=root group=root mode=0644 backup=yes
       notify: Restart collectd
      
     - name: create directory for other collectd configs which can be put there later
