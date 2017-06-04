@@ -1,7 +1,7 @@
-admin_email: ak@koeb.me
-defaultdomain: koeb.me
-hostname: bikram-berlin.koeb.me
-relay_host: mail.bremail.org
-relay_host_ip: 5.9.108.188/32
+admin_email: admin@example.com
+defaultdomain: example.com
+hostname: host1.example.com
+relay_host: mail.example.com
+relay_host_ip: 192.168.1.1/32
 relay_user: RELAY_USER
 relay_passwd: SMTP_PASSWORD
