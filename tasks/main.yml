@@ -5,13 +5,14 @@
     # and forced execution of the other tasks
     - name: check setup status
       stat: path=/etc/ansible-setup
-      register: stat
+      register: setup_stat
+
       when: force_setup is not defined
 
     - name: include
       include: setup.yml
-      when: stat is not defined or stat.stat.exists is not defined or not stat.stat.exists 
+      when: setup_stat is not defined or setup_stat.stat is not defined or setup_stat.stat.exists is not defined or not setup_stat.stat.exists 
 
     - name: put a marker on the server with this setup run
       template: src=ansible-setup.j2 dest=/etc/ansible-setup owner=root group=root mode=0644
-      when: stat is not defined or stat.stat.exists is not defined or not stat.stat.exists
+      when: setup_stat is not defined or setup_stat.stat is not defined or setup_stat.stat.exists is not defined or not setup_stat.stat.exists

@@ -4,61 +4,78 @@
     - name: Run apt dist upgrade
       apt: upgrade=dist update_cache=yes 
 
-    - name: Install fail2ban
-      apt: pkg=fail2ban state=installed
+    - name: Install various packages
+      apt: 
+        name: "{{item}}"
+        state: installed
+      with_items: 
+        - sudo
+        - fail2ban
+        - unattended-upgrades
+        - ufw
+        - logwatch
+        - nullmailer
+        - ntp
+        - collectd
+        - collectd-utils
     
     # user access
     - name: Make sure the auto user is installed, but cannot login (login only with key)
-      user: name=auto uid=2000 append=yes groups=sudo password="!" shell="/bin/bash"
+      user: name={{username}} uid=2000 append=yes groups=sudo password="!" shell="/bin/bash"
     
     - name: make sure the auto user has the ssh key it needs
-      authorized_key: user=auto key="{{ lookup('file', 'auto.pub') }}" manage_dir=yes state=present 
+      authorized_key: 
+        user: "{{username}}"
+        key: "{{ lookup('file', 'auto.pub') }}" 
+        manage_dir: yes 
+        state: present 
     
     - name: Disallow password authentication
-      lineinfile: dest=/etc/ssh/sshd_config regexp="^PasswordAuthentication" line="PasswordAuthentication no" state=present
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        state: present
       notify: Restart sshd
     
     - name: Allow ssh access only to auto and vagrant user
-      lineinfile: dest=/etc/ssh/sshd_config regexp="AllowUsers" line="AllowUsers auto vagrant" state=present
+      lineinfile: 
+        dest: /etc/ssh/sshd_config 
+        regexp: "^AllowUsers" 
+        line: "AllowUsers {{ssh_allow_users}}"
+        state: present
+      notify: Restart sshd
     
     - name: Disallow root SSH access
-      lineinfile: dest=/etc/ssh/sshd_config regexp="^PermitRootLogin" line="PermitRootLogin no" state=present
+      lineinfile: dest=/etc/ssh/sshd_config regexp="PermitRootLogin\s+" line="PermitRootLogin no" state=present
       notify: Restart sshd
     
     - name: Remove sudo group rights
       lineinfile: dest=/etc/sudoers regexp='^%sudo' state=absent
 
     - name: make sure the sudoers file allows the group sudo without password prompt
-      lineinfile: dest='/etc/sudoers' regexp='^auto' line='auto ALL=(ALL) NOPASSWD:ALL' state='present'
+      lineinfile: dest='/etc/sudoers' regexp='^{{username}}' line='auto ALL=(ALL) NOPASSWD:ALL' state='present'
 
     - name: deactivate root password
       user: name=root password="!"
     
     
     # unattended upgrades
-    - name: Install unattended-upgrades
-      apt: pkg=unattended-upgrades state=present
-      notify: Restart unattended-upgrades
-          
     - name: Adjust APT update intervals
       copy: src=apt_periodic dest=/etc/apt/apt.conf.d/10periodic
     
-    - name: setup unattended-upgrades with fixed debian release wheezy
-      copy: src=50unattended-upgrades dest=/etc/apt/apt.conf.d/50unattended-upgrades
-    
+    - name: configure mailing in unattended upgrades
+      lineinfile:
+          dest: /etc/apt/apt.conf.d/50unattended-upgrades
+          regexp: "Unattended-Upgrade::Mail "
+          line: 'Unattended-Upgrade::Mail "{{admin_email}}";'
     
     # logwatch
-    - name: Install logwatch
-      apt: pkg=logwatch state=installed
-    
     - name: Make logwatch mail to admin_email daily
       lineinfile: dest=/etc/cron.daily/00logwatch regexp="^/usr/sbin/logwatch" line="/usr/sbin/logwatch --output mail --mailto {{admin_email}} --detail high" state=present create=yes
     
     
     # firewall:
-    - name: Install ufw Firewall
-      apt: pkg=ufw state=installed
-    
     - name: configure firewall to allow ssh incoming from /etc/ufw/applications.d/openssh-server
       ufw: rule=allow name=OpenSSH state=enabled 
     
@@ -73,16 +90,21 @@
 
     - name: allow outgoing dhcp requests
       ufw: rule=allow proto=udp to_ip=109.239.48.251 to_port=67 direction=out state=enabled
-     
-    - name: Install nullmailer
-      apt: pkg=nullmailer state=installed
-   
+    
+    - name: allow ntp traffic outbound
+      ufw: rule=allow port=123 proto=udp direction=out state=enabled
+
+    - name: allow mail submission to mail relay server
+      ufw: rule=allow to_ip={{relay_host_ip}} name="Mail submission" direction=out state=enabled
+
+
+    # nullmailer 
     - name: configure nullmailer adminaddress
       copy: content="{{admin_email}}\n" dest=/etc/nullmailer/adminaddr
       notify: Restart nullmailer
 
     - name: configure nullmailer mailname
-      copy: content="{{mailname}}\n" dest=/etc/mailname
+      copy: content="{{hostname}}\n" dest=/etc/mailname
       notify: Restart nullmailer
 
     - name: configure nullmailer defauldomain
@@ -93,22 +115,7 @@
       copy: dest=/etc/nullmailer/remotes content="{{relay_host}} smtp --port=587 --user={{relay_user}} --pass={{relay_passwd}} --starttls --insecure\n"
       notify: Restart nullmailer
 
-    - name: allow mail submission to mail relay server
-      ufw: rule=allow to_ip={{relay_host_ip}} name="Mail submission" direction=out state=enabled
-
-    - name: allow ntp traffic outbound
-      ufw: rule=allow port=123 proto=udp direction=out state=enabled
-
-    - name: Install ntp server
-      apt: pkg=ntp state=installed
-
-      # Install and configure collectd
-    - name: Install collectd
-      apt: pkg=collectd state=installed
-
-    - name: Install collectd-utils
-      apt: pkg=collectd-utils state=installed
-
+      # collectd
     - name: upload collectd config
       copy: src=collectd.conf dest=/etc/collectd/collectd.conf owner=root group=root mode=0644 backup=yes
       notify: Restart collectd
