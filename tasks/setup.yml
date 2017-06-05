@@ -16,6 +16,7 @@
         - logwatch
         - nullmailer
         - ntp
+        - rsync
         - collectd
         - collectd-utils
     
