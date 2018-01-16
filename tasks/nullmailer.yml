@@ -1,0 +1,40 @@
+---
+    - name: Install nullmailer
+      apt:
+        name: nullmailer
+        state: installed
+
+    - name: remove exim
+      apt: pkg={{item}} state=absent
+      with_items:
+          - exim4-base
+          - exim4-config
+          - exim4-daemon-light
+          - exim4
+
+    # nullmailer 
+    - name: configure nullmailer adminaddress
+      copy: content="{{admin_email}}\n" dest=/etc/nullmailer/adminaddr
+      notify: Restart nullmailer
+
+    - name: configure nullmailer mailname
+      copy: content="{{hostname}}\n" dest=/etc/mailname
+      notify: Restart nullmailer
+
+    - name: configure nullmailer defauldomain
+      copy: content="{{defaultdomain}}\n" dest=/etc/nullmailer/defaultdomain
+      notify: Restart nullmailer
+
+    - name: configure nullmailer relayhost
+      copy: dest=/etc/nullmailer/remotes content="{{relay_host}} smtp --port=587 --user={{relay_user}} --pass={{relay_passwd}} --starttls --insecure\n"
+      notify: Restart nullmailer
+
+ 
+    - name: allow mail submission to mail relay server
+      ufw:
+          rule: allow 
+          to_ip: {{relay_host_ip}} 
+          name: "Mail submission" 
+          direction: out 
+          state: enabled
+

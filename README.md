@@ -1,6 +1,7 @@
 # ansible--common
 Common ansible tasks for all machines
 
-## TODO ##
+# TODO
+* test
+* push to galaxy
 
-* split in groups, add switches to turn groups on or off (eg mail config)
