@@ -1,9 +1,9 @@
 ---
 galaxy_info:
   author: Alexander Köb
-  description: Common role for all my machines
+  description: Common role for all my machines, developed and tested only on debian stretch, but should work for ubuntu as well.
   license: BSD
-  min_ansible_version: 1.7
+  min_ansible_version: 2.4
   platforms:
    - name: Ubuntu
      versions:

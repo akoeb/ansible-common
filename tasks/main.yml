@@ -49,7 +49,7 @@
     - name: Disallow root SSH access
       lineinfile: 
         dest: /etc/ssh/sshd_config 
-        regexp: "PermitRootLogin\s+" 
+        regexp: 'PermitRootLogin\s+'
         line: "PermitRootLogin no"
         state: present
       notify: Restart sshd
@@ -61,7 +61,7 @@
       lineinfile:
           dest: '/etc/sudoers' 
           regexp: '^{{username}}'
-          line: 'auto ALL=(ALL) NOPASSWD:ALL'
+          line: '{{username}} ALL=(ALL) NOPASSWD:ALL'
           state: 'present'
 
     - name: deactivate root password
@@ -130,6 +130,4 @@
       file: path=/etc/collectd/others state=directory owner=root group=root mode=0750 
       notify: Restart collectd
       
-
-    # TODO: install ossec
-
+      

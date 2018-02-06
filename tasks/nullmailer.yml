@@ -33,7 +33,7 @@
     - name: allow mail submission to mail relay server
       ufw:
           rule: allow 
-          to_ip: {{relay_host_ip}} 
+          to_ip: "{{relay_host_ip}}"
           name: "Mail submission" 
           direction: out 
           state: enabled

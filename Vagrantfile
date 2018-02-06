@@ -69,7 +69,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 #      }
       ansible.extra_vars = {
           #ansible_ssh_user: 'vagrant'
-          ssh_allow_users: 'auto vagrant'
+          username: 'vagrant'
       }
       # ansible.ask_vault_pass = true
       # ansible.verbose = "vvvv"
