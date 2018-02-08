@@ -67,10 +67,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 #          "servers" => ["default"],
 #          "all_groups:children" => ["servers"]
 #      }
-      ansible.extra_vars = {
-          #ansible_ssh_user: 'vagrant'
-          username: 'vagrant'
-      }
+      #ansible.extra_vars = {
+      #    ansible_ssh_user: 'vagrant',
+      #}
       # ansible.ask_vault_pass = true
       # ansible.verbose = "vvvv"
   end

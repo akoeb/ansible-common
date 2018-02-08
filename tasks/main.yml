@@ -57,12 +57,22 @@
     - name: Remove sudo group rights
       lineinfile: dest=/etc/sudoers regexp='^%sudo' state=absent
 
+
     - name: make sure the sudoers file allows the auto user sudo without password prompt
       lineinfile:
           dest: '/etc/sudoers' 
           regexp: '^{{username}}'
           line: '{{username}} ALL=(ALL) NOPASSWD:ALL'
           state: 'present'
+
+    # see http://docs.ansible.com/ansible/latest/intro_configuration.html#pipelining
+    - name: make sure the auto user is not required a tty in suddoers
+      lineinfile:
+          dest: '/etc/sudoers' 
+          regexp: '^Defaults:{{username}}\s*!?requiretty'
+          line: 'Defaults:{{username}}        !requiretty'
+          state: 'present'
+      
 
     - name: deactivate root password
       user: name=root password="!"
@@ -114,12 +124,22 @@
       ufw: logging=low 
 
     - name: Include nullmailer if not mailserver
-      include: nullmailer.yml
+      include_tasks: nullmailer.yml
       when: "'mailserver' not in role_names"
 
     - name: change hostname
-      hostname: name={{hostname_fqdn}}
+      hostname: name={{hostname}}
 
+    - name: make sure this hostname is in hosts file
+      lineinfile:
+          dest: /etc/hosts
+          insertafter: "^{{item}}"
+          line: "{{item}} {{hostname}}"
+          state: present
+          create: yes
+      with_items:
+          - "127.0.0.1"
+          - "::1"
 
      # collectd
     - name: upload collectd config
