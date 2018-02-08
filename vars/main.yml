@@ -1,2 +1,2 @@
-username: "auto"
+username: "deploy"
 ssh_allow_users: "{{username}} {{ansible_user}}"
