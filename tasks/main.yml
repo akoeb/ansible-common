@@ -121,7 +121,7 @@
       ufw: rule=allow port=123 proto=udp direction=out state=enabled
 
     - name: set firewall to low logging
-      ufw: logging=low 
+      ufw: logging={{ufw_log_level}} 
 
     - name: Include nullmailer if not mailserver
       include_tasks: nullmailer.yml

@@ -1,2 +1,3 @@
 username: "deploy"
 ssh_allow_users: "{{username}} {{ansible_user}}"
+ufw_log_level="low"
