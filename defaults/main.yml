@@ -5,3 +5,6 @@ relay_host: mail.example.com
 relay_host_ip: 192.168.1.1/32
 relay_user: RELAY_USER
 relay_passwd: SMTP_PASSWORD
+username: "deploy"
+ufw_log_level: "low"
+

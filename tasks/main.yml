@@ -30,48 +30,67 @@
         manage_dir: yes 
         state: present 
     
-    - name: Disallow password authentication
+    - name: Disallow password and ChallengeResponse authentication
       lineinfile:
         dest: /etc/ssh/sshd_config
-        regexp: "^PasswordAuthentication"
-        line: "PasswordAuthentication no"
+        regexp: '^\s*{{item}}Authentication\s*'
+        line: "{{item}}Authentication no"
         state: present
       notify: Restart sshd
+      with_items:
+          - "Password"
+          - "ChallengeResponse"
     
     - name: Allow ssh access only to auto user
       lineinfile: 
         dest: /etc/ssh/sshd_config 
-        regexp: "^AllowUsers" 
-        line: "AllowUsers {{ssh_allow_users}}"
+        regexp: '^AllowGroups\s*'
+        line: "AllowGroups sudo"
         state: present
       notify: Restart sshd
     
     - name: Disallow root SSH access
       lineinfile: 
         dest: /etc/ssh/sshd_config 
-        regexp: 'PermitRootLogin\s+'
+        regexp: '^\s*PermitRootLogin\s*'
         line: "PermitRootLogin no"
         state: present
       notify: Restart sshd
     
+    - name: Make sure ssh allows PAM
+      lineinfile: 
+        dest: /etc/ssh/sshd_config 
+        regexp: '^\s*UsePAM\s*'
+        line: "UsePAM yes"
+        state: present
+      notify: Restart sshd
+
     - name: Remove sudo group rights
       lineinfile: dest=/etc/sudoers regexp='^%sudo' state=absent
 
 
     - name: make sure the sudoers file allows the auto user sudo without password prompt
       lineinfile:
-          dest: '/etc/sudoers' 
-          regexp: '^{{username}}'
-          line: '{{username}} ALL=(ALL) NOPASSWD:ALL'
+          dest: '/etc/sudoers.d/sudo_group' 
+          regexp: '^%sudo'
+          line: '%sudo ALL=(ALL) NOPASSWD:ALL'
           state: 'present'
+          owner: 'root'
+          group: 'root'
+          create: 'yes'
+          mode: '0400'
 
     # see http://docs.ansible.com/ansible/latest/intro_configuration.html#pipelining
     - name: make sure the auto user is not required a tty in suddoers
       lineinfile:
-          dest: '/etc/sudoers' 
+          dest: '/etc/sudoers.d/defaults' 
           regexp: '^Defaults:{{username}}\s*!?requiretty'
           line: 'Defaults:{{username}}        !requiretty'
           state: 'present'
+          owner: 'root'
+          group: 'root'
+          create: 'yes'
+          mode: '0400'
       
 
     - name: deactivate root password
@@ -125,7 +144,7 @@
 
     - name: Include nullmailer if not mailserver
       include_tasks: nullmailer.yml
-      when: "'mailserver' not in role_names"
+      when: "('mailserver' not in role_names) and not skip_nullmailer"
 
     - name: change hostname
       hostname: name={{hostname}}
