@@ -6,7 +6,7 @@
 
     - name: Install various packages
       apt: 
-        name: "{{item}}"
+        name: "{{ item }}"
         state: present
       with_items: 
         - sudo
@@ -21,11 +21,11 @@
     
     # user access
     - name: Make sure the auto user is installed, but cannot login (login only with key)
-      user: name={{username}} uid=2000 append=yes groups=sudo password="!" shell="/bin/bash"
+      user: name={{ username }} uid=2000 append=yes groups=sudo password="!" shell="/bin/bash"
     
     - name: make sure the auto user has the ssh key it needs
       authorized_key: 
-        user: "{{username}}"
+        user: "{{ username }}"
         key: "{{ lookup('file', 'auto.pub') }}" 
         manage_dir: yes 
         state: present 
@@ -33,8 +33,8 @@
     - name: Disallow password and ChallengeResponse authentication
       lineinfile:
         dest: /etc/ssh/sshd_config
-        regexp: '^\s*{{item}}Authentication\s*'
-        line: "{{item}}Authentication no"
+        regexp: '^\s*{{ item }}Authentication\s*'
+        line: "{{ item }}Authentication no"
         state: present
       notify: Restart sshd
       with_items:
@@ -84,8 +84,8 @@
     - name: make sure the auto user is not required a tty in suddoers
       lineinfile:
           dest: '/etc/sudoers.d/defaults' 
-          regexp: '^Defaults:{{username}}\s*!?requiretty'
-          line: 'Defaults:{{username}}        !requiretty'
+          regexp: '^Defaults:{{ username }}\s*!?requiretty'
+          line: 'Defaults:{{ username }}        !requiretty'
           state: 'present'
           owner: 'root'
           group: 'root'
@@ -102,11 +102,17 @@
       copy:
         src: apt_periodic
         dest: /etc/apt/apt.conf.d/10periodic
+        owner: 'root'
+        group: 'root'
+        mode: '0644'
     
     - name: setup unattended-upgrades
       copy: 
         src: 50unattended-upgrades
         dest: /etc/apt/apt.conf.d/50unattended-upgrades
+        owner: 'root'
+        group: 'root'
+        mode: '0644'
     
     
     # logwatch
@@ -114,9 +120,12 @@
       lineinfile:
           dest: /etc/cron.daily/00logwatch
           regexp: "^/usr/sbin/logwatch"
-          line: "/usr/sbin/logwatch --output mail --mailto {{admin_email}} --detail high"
+          line: "/usr/sbin/logwatch --output mail --mailto {{ admin_email }} --detail high"
           state: present
           create: yes
+          owner: 'root'
+          group: 'root'
+          mode: '0755'
     
     
     # firewall:
@@ -140,22 +149,25 @@
       ufw: rule=allow port=123 proto=udp direction=out state=enabled
 
     - name: set firewall to low logging
-      ufw: logging={{ufw_log_level}} 
+      ufw: logging={{ ufw_log_level }} 
 
     - name: Include nullmailer if not mailserver
       include_tasks: nullmailer.yml
       when: "('mailserver' not in role_names) and skip_nullmailer is undefined"
 
     - name: change hostname
-      hostname: name={{hostname}}
+      hostname: name={{ hostname }}
 
     - name: make sure this hostname is in hosts file
       lineinfile:
           dest: /etc/hosts
-          insertafter: "^{{item}}"
-          line: "{{item}} {{hostname}}"
+          insertafter: "^{{ item }}"
+          line: "{{ item }} {{ hostname }}"
           state: present
           create: yes
+          owner: 'root'
+          group: 'root'
+          mode: '0644'
       with_items:
           - "127.0.0.1"
           - "::1"

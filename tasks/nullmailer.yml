@@ -5,7 +5,7 @@
         state: present
 
     - name: remove exim
-      apt: pkg={{item}} state=absent
+      apt: pkg={{ item }} state=absent
       with_items:
           - exim4-base
           - exim4-config
@@ -14,26 +14,46 @@
 
     # nullmailer 
     - name: configure nullmailer adminaddress
-      copy: content="{{admin_email}}\n" dest=/etc/nullmailer/adminaddr
+      copy: 
+        content: "{{ admin_email }}\n" 
+        dest: "/etc/nullmailer/adminaddr"
+        owner: 'root'
+        group: 'root'
+        mode: '0644'
       notify: Restart nullmailer
 
     - name: configure nullmailer mailname
-      copy: content="{{hostname}}\n" dest=/etc/mailname
+      copy: 
+        content: "{{ hostname }}\n" 
+        dest: "/etc/mailname"
+        owner: 'root'
+        group: 'root'
+        mode: '0644'
       notify: Restart nullmailer
 
     - name: configure nullmailer defauldomain
-      copy: content="{{defaultdomain}}\n" dest=/etc/nullmailer/defaultdomain
+      copy: 
+        content: "{{ defaultdomain }}\n" 
+        dest: "/etc/nullmailer/defaultdomain"
+        owner: 'root'
+        group: 'root'
+        mode: '0644'
       notify: Restart nullmailer
 
     - name: configure nullmailer relayhost
-      copy: dest=/etc/nullmailer/remotes content="{{relay_host}} smtp --port=587 --user={{relay_user}} --pass={{relay_passwd}} --starttls --insecure\n"
+      copy: 
+        dest: "/etc/nullmailer/remotes" 
+        content: "{{ relay_host }} smtp --port=587 --user={{ relay_user }} --pass={{ relay_passwd }} --starttls --insecure\n"
+        owner: 'mail'
+        group: 'mail'
+        mode: '0600'
       notify: Restart nullmailer
 
  
     - name: allow mail submission to mail relay server
       ufw:
           rule: allow 
-          to_ip: "{{relay_host_ip}}"
+          to_ip: "{{ relay_host_ip }}"
           name: "Mail submission" 
           direction: out 
           state: enabled
