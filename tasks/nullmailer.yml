@@ -2,7 +2,7 @@
     - name: Install nullmailer
       apt:
         name: nullmailer
-        state: installed
+        state: present
 
     - name: remove exim
       apt: pkg={{item}} state=absent

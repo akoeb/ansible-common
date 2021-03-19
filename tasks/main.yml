@@ -7,7 +7,7 @@
     - name: Install various packages
       apt: 
         name: "{{item}}"
-        state: installed
+        state: present
       with_items: 
         - sudo
         - fail2ban
@@ -144,7 +144,7 @@
 
     - name: Include nullmailer if not mailserver
       include_tasks: nullmailer.yml
-      when: "('mailserver' not in role_names) and not skip_nullmailer"
+      when: "('mailserver' not in role_names) and skip_nullmailer is undefined"
 
     - name: change hostname
       hostname: name={{hostname}}
