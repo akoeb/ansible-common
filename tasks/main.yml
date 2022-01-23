@@ -6,18 +6,8 @@
 
     - name: Install various packages
       apt: 
-        name: "{{ item }}"
+        name: "{{ packages }}"
         state: present
-      with_items: 
-        - sudo
-        - fail2ban
-        - unattended-upgrades
-        - ufw
-        - logwatch
-        - ntp
-        - rsync
-        - collectd
-        - collectd-utils
     
     # user access
     - name: Make sure the auto user is installed, but cannot login (login only with key)

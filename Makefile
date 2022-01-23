@@ -1,2 +1,2 @@
 deploy:
-	sudo cp -r ./ /etc/ansible/roles/akoeb.ansible-common/
+	rsync -a --progress ./ ${HOME}/.ansible/roles/akoeb.common/ --exclude .git 

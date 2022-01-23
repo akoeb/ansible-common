@@ -1,0 +1,12 @@
+packages:
+  - sudo
+  - fail2ban
+  - unattended-upgrades
+  - ufw
+  - logwatch
+  - ntp
+  - rsync
+  - tmux
+  - collectd
+  - collectd-utils
+

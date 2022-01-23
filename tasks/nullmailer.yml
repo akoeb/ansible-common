@@ -5,12 +5,9 @@
         state: present
 
     - name: remove exim
-      apt: pkg={{ item }} state=absent
-      with_items:
-          - exim4-base
-          - exim4-config
-          - exim4-daemon-light
-          - exim4
+      apt: 
+        pkg: [ "exim4-base", "exim4-config", "exim4-daemon-light", "exim4" ]
+        state: absent
 
     # nullmailer 
     - name: configure nullmailer adminaddress
