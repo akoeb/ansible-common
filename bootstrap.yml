@@ -1,0 +1,19 @@
+---
+- hosts: localhost
+  gather_facts: False
+  vars_prompt:
+    - name: IPAddress
+      prompt: Please enter the IP Address of the remote machine to bootstrap
+      private: False
+      default: ""
+  pre_tasks:
+    - name: Add host
+      ansible.builtin.add_host:
+        name: "{{IPAddress}}" 
+        groups: just_created
+
+
+- hosts: just_created
+  user: root
+  roles:
+      - akoeb.common

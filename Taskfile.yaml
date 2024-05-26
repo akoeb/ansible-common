@@ -1,0 +1,15 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+  sync-local:
+    cmds:
+      - rsync -a --progress ./roles/akoeb.common/ ${HOME}/.ansible/roles/akoeb.common/ --exclude .git
+    silent: false
+  bootstrap:
+    cmds:
+      - ansible-playbook bootstrap.yml
